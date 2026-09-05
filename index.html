@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Урилга</title>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ГАДНЫ САН (CDN)
+     Tailwind — layout/utility, GSAP+ScrollTrigger — анимейшн,
+     Google Fonts — Playfair Display (кирилл дэмждэг), Cormorant, Inter
+     ═══════════════════════════════════════════════════════════════ -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Inter:wght@300;400;500&display=swap&subset=cyrillic,cyrillic-ext,latin" rel="stylesheet">
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   ⚙️  CONFIG / DATA — ЗӨВХӨН ЭНЭ ХЭСГИЙГ ЗАСНА
+   ───────────────────────────────────────────────────────────────────────
+   Хурим / Төрсөн өдөр / Даахь үргээх найр — ямар ч арга хэмжээнд
+   дахин ашиглахын тулд доорх утгуудыг л солиход хангалттай.
+   ═══════════════════════════════════════════════════════════════════════ */
+const CONFIG = {
+
+  /* ── 1. Дугтуйн дэлгэц ─────────────────────────────────────────── */
+  envelope: {
+    monogram:  "Б&А",                    // Лацан дээрх монограм (1–3 тэмдэгт)
+    hint:      "Лацыг дарж урилгаа нээнэ үү",
+    toLabel:   "Эрхэм хүндэт зочин Танд"
+  },
+
+  /* ── 2. Үндсэн мэдээлэл ────────────────────────────────────────── */
+  event: {
+    type:     "Гэрлэх ёслолын хурим",     // Арга хэмжээний төрөл (eyebrow)
+    hosts:    ["Батбаяр", "Алтанцэцэг"],  // 1 эсвэл 2 нэр — аль алинд ажиллана
+    joiner:   "&",                        // Хоёр нэрийн хоорондох тэмдэг
+    verse:    "Хоёр зүрх нэг хэмнэлээр цохилж,\nхоёр зам нэг болох тэр өдөр\nТаны ерөөл бидэнд хамгийн үнэтэй.",
+    dateISO:  "2026-09-19T17:00:00+08:00",// ⚠️ Countdown үүнээс тоолно (ISO 8601)
+    dateText: "2026.09.19",               // Дэлгэцэнд харагдах огноо
+    dayText:  "Бямба гараг · 17:00"
+  },
+
+  /* ── 3. Зургийн цомог ──────────────────────────────────────────── */
+  gallery: [
+    { src: "https://images.unsplash.com/photo-1519741497674-611481863552?w=900&q=80", caption: "Анх учирсан намар" },
+    { src: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=900&q=80", caption: "Хамтдаа туулсан зам" },
+    { src: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=900&q=80", caption: "Бэлгэ тэмдгийн бөгж" },
+    { src: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=900&q=80", caption: "Шинэ амьдралын босго" }
+  ],
+
+  /* ── 4. Хөтөлбөрийн цагийн хуваарь ─────────────────────────────── */
+  schedule: [
+    { time: "16:30", title: "Зочид цугларах",       desc: "Хүлээн авалт, гэрэл зураг", icon: "guests" },
+    { time: "17:00", title: "Ёслолын ажиллагаа",    desc: "Гэрлэлтийн батламж",        icon: "rings"  },
+    { time: "18:00", title: "Найрын хоол",          desc: "Зоог барих",                icon: "dining" },
+    { time: "19:30", title: "Ерөөл, хүндэтгэл",     desc: "Ах дүү, найз нөхдийн үг",   icon: "toast"  },
+    { time: "21:00", title: "Хөгжим, бүжиг",        desc: "Тоглолт ба бүжгийн цаг",    icon: "music"  }
+  ],
+
+  /* ── 5. Байршил ────────────────────────────────────────────────── */
+  venue: {
+    name:    "Шангри-Ла зочид буудал",
+    hall:    "Гранд Болрум танхим",
+    address: "Улаанбаатар хот, Сүхбаатар дүүрэг, Олимпийн гудамж 19А",
+    mapsUrl: "https://maps.google.com/?q=Shangri-La+Ulaanbaatar"   // Google Maps холбоос
+  },
+
+  /* ── 6. Зочдод хандсан санамж ──────────────────────────────────── */
+  guidelines: [
+    { icon: "dress", title: "Хувцасны хэв маяг", desc: "Албан ёсны · Хар, бордоо, алтан өнгө" },
+    { icon: "clock", title: "Цаг баримтлал",     desc: "Ёслол 17:00 цагт яг эхэлнэ" },
+    { icon: "gift",  title: "Бэлэг",             desc: "Таны ирсэн явдал өөрөө хамгийн том бэлэг" },
+    { icon: "photo", title: "Гэрэл зураг",       desc: "Ёслолын үеэр утсаа чимээгүй болгоно уу" }
+  ],
+
+  /* ── 7. RSVP (Ирц) хэсэг ───────────────────────────────────────── */
+  rsvp: {
+    deadline: "2026.09.10 хүртэл хариугаа өгнө үү",
+    /* Хариултыг хаана хүлээж авах вэ?
+       null  → зөвхөн дэлгэц дээр амжилттай гэж харуулна (backend шаардахгүй)
+       "URL" → Google Apps Script / Formspree / n8n webhook хаяг тавьбал POST явуулна */
+    endpoint: null
+  },
+
+  /* ── 8. Арын хөгжим ────────────────────────────────────────────── */
+  music: {
+    src:      "",          // .mp3 холбоос тавина. Хоосон бол товч харагдахгүй.
+    autoplay: false        // Ихэнх хөтөч автоматаар тоглуулахыг хориглодог
+  },
+
+  /* ── 9. Төгсгөлийн үг ──────────────────────────────────────────── */
+  closing: {
+    line:  "Таныг хүлээн авахдаа таатай байх болно",
+    names: "Батбаяр & Алтанцэцэг"
+  }
+};
+</script>
+
+<script>
+/* Tailwind тохиргоо — брэндийн өнгө ба шрифт */
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        burgundy:  "#4A0E17",   // Үндсэн гүн бордоо
+        burgundy2: "#63131F",   // Нэг зэрэг цайвар бордоо (градиент/карт)
+        cream:     "#FDFBF7",   // Цөцгий цагаан
+        gold:      "#C2A15B",   // Алт
+        gold2:     "#E4CE95",   // Гэрэлтсэн алт (highlight)
+        ink:       "#2B0A10"    // Хамгийн бараан өнгө
+      },
+      fontFamily: {
+        display: ['"Playfair Display"', "serif"],
+        soft:    ['"Cormorant Garamond"', "serif"],
+        body:    ["Inter", "system-ui", "sans-serif"]
+      }
+    }
+  }
+};
+</script>
+
+<style>
+  /* ═════════ ҮНДСЭН СТИЛЬ ═════════ */
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { background:#4A0E17; overscroll-behavior-y: none; }
+
+  /* Дугтуй нээгдэх хүртэл гүйлгэхийг түгжинэ */
+  body.locked { overflow: hidden; height: 100vh; }
+
+  /* Цаасны нарийн ширхэглэг — тансаг мэдрэмж өгнө */
+  .paper {
+    background-color:#FDFBF7;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(194,161,91,.07), transparent 55%),
+      radial-gradient(circle at 85% 80%, rgba(74,14,23,.05), transparent 55%);
+  }
+
+  /* Алтан нимгэн шугам — секшн хоорондын залгаас */
+  .thread { width:1px; background:linear-gradient(180deg, transparent, #C2A15B, transparent); }
+
+  /* Алтан текстийн градиент */
+  .gold-text {
+    background:linear-gradient(100deg,#B08D45,#E4CE95 45%,#B08D45);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+
+  /* Reveal — GSAP-аар удирдана. Эхэндээ нуугдана. */
+  .reveal { opacity:0; transform:translateY(28px); }
+
+  /* Хэвтээ цомог — touch swipe + snap */
+  .snap-x-track {
+    display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none; padding:0 24px;
+  }
+  .snap-x-track::-webkit-scrollbar { display:none; }
+  .snap-item { flex:0 0 78%; scroll-snap-align:center; }
+
+  /* Дугтуйн эд ангиуд */
+  #env-flap  { transform-origin: top center; backface-visibility:hidden; }
+  #env-front { clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0, 50% 58%); }
+
+  /* Лацны алтан гялбаа */
+  .seal {
+    background:
+      radial-gradient(circle at 32% 28%, #F0DFAE 0%, #C2A15B 42%, #8F6F2F 78%, #6B4F1D 100%);
+    box-shadow: 0 10px 30px rgba(0,0,0,.45), inset 0 2px 6px rgba(255,255,255,.35);
+  }
+  .seal::after {
+    content:""; position:absolute; inset:6px; border-radius:9999px;
+    border:1px dashed rgba(255,255,255,.35);
+  }
+
+  /* Товчны товойлт */
+  .btn-gold {
+    background:linear-gradient(135deg,#B08D45,#E4CE95 50%,#B08D45);
+    color:#3A0A12;
+  }
+
+  /* Focus — гарын товчлуураар ажиллах боломж */
+  :focus-visible { outline:2px solid #E4CE95; outline-offset:3px; border-radius:2px; }
+
+  /* Хөдөлгөөн багасгах тохиргоог хүндэтгэнэ */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior:auto; }
+    .reveal { opacity:1 !important; transform:none !important; }
+  }
+</style>
+</head>
+
+<body class="locked font-body text-ink antialiased">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     1. ДУГТУЙ — HERO (лац нээгдэж, урилга гарч ирнэ)
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="envelope-screen"
+     class="fixed inset-0 z-50 flex flex-col items-center justify-center px-6"
+     style="background:radial-gradient(ellipse at 50% 35%, #63131F 0%, #4A0E17 55%, #33080F 100%)">
+
+  <p id="env-to" class="font-soft italic text-gold2/70 text-[15px] tracking-wide mb-8"></p>
+
+  <!-- Дугтуйны корпус. perspective — нугалаа гурван хэмжээст эргэнэ -->
+  <div id="envelope" class="relative w-[290px] h-[196px]" style="perspective:1200px">
+
+    <!-- Дотор карт (нээгдэхэд дээш гарч ирнэ) -->
+    <div id="env-card"
+         class="absolute left-[5%] top-[5%] w-[90%] h-[90%] rounded-[3px] paper z-10
+                flex flex-col items-center justify-center shadow-2xl">
+      <span class="text-[10px] tracking-[.35em] uppercase text-burgundy/50" id="card-type"></span>
+      <span class="font-display text-2xl text-burgundy mt-2" id="card-names"></span>
+      <span class="w-10 h-px bg-gold my-3"></span>
+      <span class="font-soft text-burgundy/70 text-sm" id="card-date"></span>
+    </div>
+
+    <!-- Дугтуйны ар тал -->
+    <div class="absolute inset-0 rounded-[4px] z-0"
+         style="background:linear-gradient(160deg,#FDFBF7,#EFE7DA)"></div>
+
+    <!-- Дугтуйны нүүр (V хэлбэрийн зүсэлттэй) -->
+    <div id="env-front" class="absolute inset-0 rounded-[4px] z-20"
+         style="background:linear-gradient(200deg,#FBF6EC,#E8DCC8)"></div>
+
+    <!-- Нугалаа (дээд таг) -->
+    <div id="env-flap" class="absolute top-0 left-0 w-full h-[58%] z-30"
+         style="background:linear-gradient(180deg,#F6EEDF,#E2D4BC);
+                clip-path:polygon(0 0, 100% 0, 50% 100%)"></div>
+
+    <!-- Алтан лац — дарах товч -->
+    <button id="seal" aria-label="Урилгыг нээх"
+            class="seal absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2
+                   w-[74px] h-[74px] rounded-full z-40 flex items-center justify-center">
+      <span id="seal-mono" class="font-display text-[19px] text-[#4A0E17]/80 drop-shadow"></span>
+    </button>
+  </div>
+
+  <!-- Заавар — зөөлөн анивчина -->
+  <p id="env-hint" class="mt-10 text-cream/60 text-[13px] tracking-[.2em] uppercase"></p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ҮНДСЭН УРИЛГА
+     ═══════════════════════════════════════════════════════════════ -->
+<main id="invite" class="paper relative overflow-hidden">
+
+  <!-- ── 2. Гол мэдээлэл ─────────────────────────────────────── -->
+  <section class="min-h-[100svh] flex flex-col items-center justify-center text-center px-8 py-24">
+
+    <p class="reveal text-[10px] tracking-[.45em] uppercase text-burgundy/55" id="ev-type"></p>
+
+    <div class="reveal thread h-14 my-7"></div>
+
+    <!-- Гол эзний нэр(с) -->
+    <h1 class="reveal font-display leading-[1.05]">
+      <span class="block text-[clamp(2.4rem,13vw,4rem)] text-burgundy" id="host-1"></span>
+      <span class="block font-soft italic text-gold text-[clamp(1.3rem,7vw,2rem)] my-1" id="host-join"></span>
+      <span class="block text-[clamp(2.4rem,13vw,4rem)] text-burgundy" id="host-2"></span>
+    </h1>
+
+    <!-- Шүлэг / ерөөлийн үг -->
+    <p class="reveal font-soft text-[19px] leading-[1.85] text-burgundy/75 mt-9 max-w-[19rem] whitespace-pre-line"
+       id="ev-verse"></p>
+
+    <!-- Огноо -->
+    <div class="reveal mt-11 flex flex-col items-center">
+      <div class="flex items-center gap-4">
+        <span class="w-8 h-px bg-gold/60"></span>
+        <span class="font-display text-[26px] tracking-[.06em] text-burgundy" id="ev-date"></span>
+        <span class="w-8 h-px bg-gold/60"></span>
+      </div>
+      <span class="mt-2 text-[11px] tracking-[.3em] uppercase text-burgundy/50" id="ev-day"></span>
+    </div>
+
+    <!-- Доош гүйлгэх сануулга -->
+    <div class="reveal mt-16 flex flex-col items-center gap-2 text-burgundy/35">
+      <span class="text-[10px] tracking-[.3em] uppercase">Доош</span>
+      <span class="w-px h-8 bg-burgundy/25 animate-pulse"></span>
+    </div>
+  </section>
+
+
+  <!-- ── 3. Зургийн цомог ────────────────────────────────────── -->
+  <section class="py-20 bg-burgundy text-cream">
+    <header class="text-center px-8 mb-9">
+      <p class="reveal text-[10px] tracking-[.4em] uppercase text-gold2/70">Цомог</p>
+      <h2 class="reveal font-display text-[30px] mt-2">Бидний мөчүүд</h2>
+    </header>
+
+    <!-- Хуруугаараа шудрах (swipe) слайдер -->
+    <div id="gallery" class="snap-x-track reveal pb-2"></div>
+
+    <!-- Идэвхтэй зургийн заагч цэгүүд -->
+    <div id="gallery-dots" class="flex justify-center gap-2 mt-6"></div>
+  </section>
+
+
+  <!-- ── 4. Countdown ────────────────────────────────────────── -->
+  <section class="py-20 px-8 text-center">
+    <p class="reveal text-[10px] tracking-[.4em] uppercase text-burgundy/55">Тэр өдөр хүртэл</p>
+    <div id="countdown" class="reveal mt-8 grid grid-cols-4 gap-2 max-w-sm mx-auto"></div>
+    <p id="countdown-note" class="font-soft italic text-burgundy/60 mt-6 hidden"></p>
+  </section>
+
+
+  <!-- ── 5. Хөтөлбөр ─────────────────────────────────────────── -->
+  <section class="py-20 px-8">
+    <header class="text-center mb-12">
+      <p class="reveal text-[10px] tracking-[.4em] uppercase text-burgundy/55">Хөтөлбөр</p>
+      <h2 class="reveal font-display text-[30px] text-burgundy mt-2">Өдрийн урсгал</h2>
+    </header>
+    <ol id="schedule" class="relative max-w-md mx-auto"></ol>
+  </section>
+
+
+  <!-- ── 6. Байршил ──────────────────────────────────────────── -->
+  <section class="py-20 px-8 bg-burgundy text-cream text-center">
+    <p class="reveal text-[10px] tracking-[.4em] uppercase text-gold2/70">Байршил</p>
+    <h2 class="reveal font-display text-[32px] mt-3" id="venue-name"></h2>
+    <p class="reveal font-soft text-gold2/90 text-[19px] mt-1" id="venue-hall"></p>
+    <p class="reveal text-cream/70 text-[14px] leading-relaxed mt-4 max-w-xs mx-auto" id="venue-address"></p>
+
+    <a id="venue-map" href="#" target="_blank" rel="noopener"
+       class="reveal btn-gold inline-flex items-center gap-2 mt-8 px-7 py-3.5 rounded-full
+              text-[13px] tracking-[.12em] uppercase font-medium">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
+      </svg>
+      Газрын зураг харах
+    </a>
+  </section>
+
+
+  <!-- ── 7. Санамж ───────────────────────────────────────────── -->
+  <section class="py-20 px-8">
+    <header class="text-center mb-11">
+      <p class="reveal text-[10px] tracking-[.4em] uppercase text-burgundy/55">Санамж</p>
+      <h2 class="reveal font-display text-[30px] text-burgundy mt-2">Зочдод хандан</h2>
+    </header>
+    <div id="guidelines" class="max-w-md mx-auto space-y-3"></div>
+  </section>
+
+
+  <!-- ── 8. RSVP ба Мэндчилгээ ───────────────────────────────── -->
+  <section class="py-20 px-8 bg-burgundy text-cream">
+    <header class="text-center mb-10">
+      <p class="reveal text-[10px] tracking-[.4em] uppercase text-gold2/70">Ирц</p>
+      <h2 class="reveal font-display text-[30px] mt-2">Та ирэх үү?</h2>
+      <p class="reveal text-cream/60 text-[13px] mt-3" id="rsvp-deadline"></p>
+    </header>
+
+    <div id="rsvp-form" class="reveal max-w-md mx-auto space-y-6">
+
+      <!-- Нэр -->
+      <div>
+        <label for="g-name" class="block text-[11px] tracking-[.25em] uppercase text-gold2/70 mb-2">Таны нэр</label>
+        <input id="g-name" type="text" autocomplete="name" placeholder="Овог нэр"
+               class="w-full bg-transparent border-b border-cream/25 py-3 text-cream text-[16px]
+                      placeholder:text-cream/30 focus:border-gold2 outline-none transition-colors">
+      </div>
+
+      <!-- Ирэх эсэх — сонголтын товч -->
+      <div>
+        <span class="block text-[11px] tracking-[.25em] uppercase text-gold2/70 mb-3">Хариулт</span>
+        <div class="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Ирэх эсэх">
+          <button type="button" data-attend="yes" role="radio" aria-checked="true"
+                  class="attend-opt border border-gold2 bg-gold2 text-burgundy rounded-full py-3 text-[14px] transition-all">
+            Баяртайгаар ирнэ
+          </button>
+          <button type="button" data-attend="no" role="radio" aria-checked="false"
+                  class="attend-opt border border-cream/25 text-cream/70 rounded-full py-3 text-[14px] transition-all">
+            Ирж чадахгүй
+          </button>
+        </div>
+      </div>
+
+      <!-- Хүний тоо — зөвхөн "ирнэ" сонгосон үед -->
+      <div id="count-wrap" class="overflow-hidden">
+        <span class="block text-[11px] tracking-[.25em] uppercase text-gold2/70 mb-3">Хэдүүлээ ирэх вэ?</span>
+        <div class="flex items-center gap-5">
+          <button type="button" id="cnt-minus" aria-label="Хасах"
+                  class="w-11 h-11 rounded-full border border-cream/25 text-xl leading-none">−</button>
+          <span id="cnt-val" class="font-display text-3xl w-10 text-center">1</span>
+          <button type="button" id="cnt-plus" aria-label="Нэмэх"
+                  class="w-11 h-11 rounded-full border border-cream/25 text-xl leading-none">+</button>
+        </div>
+      </div>
+
+      <!-- Мэндчилгээ -->
+      <div>
+        <label for="g-wish" class="block text-[11px] tracking-[.25em] uppercase text-gold2/70 mb-2">Мэндчилгээ, ерөөл</label>
+        <textarea id="g-wish" rows="4" placeholder="Сэтгэлийн үгээ үлдээнэ үү…"
+                  class="w-full bg-transparent border border-cream/20 rounded-lg p-4 text-cream text-[16px]
+                         placeholder:text-cream/30 focus:border-gold2 outline-none transition-colors resize-none"></textarea>
+      </div>
+
+      <button type="button" id="rsvp-send"
+              class="btn-gold w-full py-4 rounded-full text-[13px] tracking-[.18em] uppercase font-medium">
+        Илгээх
+      </button>
+      <p id="rsvp-error" class="text-[13px] text-gold2 text-center hidden"></p>
+    </div>
+
+    <!-- Амжилттай илгээсэн дэлгэц -->
+    <div id="rsvp-success" class="hidden max-w-md mx-auto text-center py-6">
+      <svg id="tick" width="70" height="70" viewBox="0 0 52 52" class="mx-auto">
+        <circle id="tick-c" cx="26" cy="26" r="23" fill="none" stroke="#E4CE95" stroke-width="1.5"/>
+        <path id="tick-p" d="M15 27 l8 8 l15 -16" fill="none" stroke="#E4CE95"
+              stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h3 class="font-display text-[26px] mt-6">Хүлээж авлаа</h3>
+      <p class="font-soft text-[18px] text-cream/75 mt-2" id="success-text"></p>
+    </div>
+  </section>
+
+
+  <!-- ── 9. Төгсгөл ──────────────────────────────────────────── -->
+  <footer class="py-20 px-8 text-center">
+    <div class="reveal thread h-12 mx-auto mb-7"></div>
+    <p class="reveal font-soft italic text-[20px] text-burgundy/70" id="close-line"></p>
+    <p class="reveal font-display gold-text text-[26px] mt-4" id="close-names"></p>
+    <p class="reveal text-[10px] tracking-[.3em] uppercase text-burgundy/35 mt-10" id="close-date"></p>
+  </footer>
+</main>
+
+
+<!-- ── Хөгжмийн хөвөгч товч ────────────────────────────────────── -->
+<button id="music-btn" aria-label="Хөгжим тоглуулах"
+        class="hidden fixed bottom-5 right-5 z-40 w-12 h-12 rounded-full btn-gold
+               items-center justify-center shadow-lg">
+  <svg id="ic-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+  <svg id="ic-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="hidden"><path d="M7 5h4v14H7zm6 0h4v14h-4z"/></svg>
+</button>
+<audio id="bg-audio" loop preload="none"></audio>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   ЛОГИК
+   ═══════════════════════════════════════════════════════════════════════ */
+const $  = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* SVG икон сан — CONFIG доторх "icon" түлхүүрээр дуудагдана */
+const ICONS = {
+  guests:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M17 11.5a2.6 2.6 0 1 0 0-5.2"/><path d="M18 20c0-2.4-.9-4.2-2.4-5.2"/>',
+  rings :'<circle cx="9" cy="14" r="5.4"/><circle cx="15" cy="14" r="5.4"/><path d="M15 4l1.6 2.6h-3.2L15 4z"/>',
+  dining:'<path d="M6 3v8a2.5 2.5 0 0 0 5 0V3"/><path d="M8.5 11v10"/><path d="M17 3c-1.6 1.4-2.2 3.4-2.2 5.5S15.4 12 17 12.6V21"/>',
+  toast :'<path d="M6 4h12l-1.2 6.2A5 5 0 0 1 12 14a5 5 0 0 1-4.8-3.8L6 4z"/><path d="M12 14v6"/><path d="M8.5 20h7"/>',
+  music :'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="16.5" cy="16" r="2.6"/>',
+  dress :'<path d="M9 3l3 2 3-2 2 3-2.5 2 2.5 11H7l2.5-11L7 6l2-3z"/>',
+  clock :'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2V12l3.2 2"/>',
+  gift  :'<rect x="3.5" y="9.5" width="17" height="11" rx="1.4"/><path d="M3.5 13.5h17M12 9.5V21"/><path d="M12 9.5S10.5 4 8 4a2.2 2.2 0 0 0 0 5.5zM12 9.5S13.5 4 16 4a2.2 2.2 0 0 1 0 5.5z"/>',
+  photo :'<rect x="3" y="6.5" width="18" height="13.5" rx="2"/><circle cx="12" cy="13.2" r="3.6"/><path d="M8.5 6.5l1.4-2.5h4.2l1.4 2.5"/>'
+};
+const icon = (n) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"
+        stroke-linecap="round" stroke-linejoin="round" class="w-full h-full">${ICONS[n]||ICONS.clock}</svg>`;
+
+
+/* ───────── 1. CONFIG-оос HTML-рүү өгөгдөл бөглөх ───────── */
+function fillContent() {
+  const C = CONFIG;
+
+  // Дугтуй
+  $("#seal-mono").textContent = C.envelope.monogram;
+  $("#env-hint").textContent  = C.envelope.hint;
+  $("#env-to").textContent    = C.envelope.toLabel;
+  $("#card-type").textContent = C.event.type;
+  $("#card-names").textContent= C.event.hosts.join(` ${C.event.joiner} `);
+  $("#card-date").textContent = C.event.dateText;
+
+  // Гол мэдээлэл. Нэг эзэнтэй үед хоёр дахь мөрийг нуух.
+  $("#ev-type").textContent = C.event.type;
+  $("#host-1").textContent  = C.event.hosts[0] || "";
+  if (C.event.hosts.length > 1) {
+    $("#host-join").textContent = C.event.joiner;
+    $("#host-2").textContent    = C.event.hosts[1];
+  } else {
+    $("#host-join").remove();
+    $("#host-2").remove();
+  }
+  $("#ev-verse").textContent = C.event.verse;
+  $("#ev-date").textContent  = C.event.dateText;
+  $("#ev-day").textContent   = C.event.dayText;
+
+  // Цомог
+  $("#gallery").innerHTML = C.gallery.map((g,i)=>`
+    <figure class="snap-item">
+      <div class="aspect-[3/4] overflow-hidden rounded-sm bg-burgundy2">
+        <img src="${g.src}" alt="${g.caption}" loading="lazy"
+             class="w-full h-full object-cover">
+      </div>
+      <figcaption class="font-soft italic text-center text-[15px] text-gold2/80 mt-3">${g.caption}</figcaption>
+    </figure>`).join("");
+  $("#gallery-dots").innerHTML = C.gallery.map((_,i)=>
+    `<span class="dot h-1.5 rounded-full transition-all ${i===0?'bg-gold2 w-5':'bg-cream/30 w-1.5'}"></span>`).join("");
+
+  // Хөтөлбөр — зүүн талд алтан утас, цэг бүр нь үйл ажиллагаа
+  $("#schedule").innerHTML = C.schedule.map((s,i)=>`
+    <li class="reveal relative pl-16 pb-10 last:pb-0">
+      ${i < C.schedule.length-1 ? '<span class="absolute left-[21px] top-11 bottom-0 w-px bg-gold/30"></span>' : ''}
+      <span class="absolute left-0 top-0 w-11 h-11 rounded-full border border-gold/45
+                   flex items-center justify-center text-gold p-2.5">${icon(s.icon)}</span>
+      <span class="block font-display text-[19px] text-gold tracking-wide">${s.time}</span>
+      <span class="block font-display text-[18px] text-burgundy mt-0.5">${s.title}</span>
+      <span class="block text-[13px] text-burgundy/55 mt-1">${s.desc}</span>
+    </li>`).join("");
+
+  // Байршил
+  $("#venue-name").textContent    = C.venue.name;
+  $("#venue-hall").textContent    = C.venue.hall;
+  $("#venue-address").textContent = C.venue.address;
+  $("#venue-map").href            = C.venue.mapsUrl;
+
+  // Санамж
+  $("#guidelines").innerHTML = C.guidelines.map(g=>`
+    <div class="reveal flex items-start gap-4 border border-burgundy/10 rounded-xl p-4 bg-white/40">
+      <span class="shrink-0 w-9 h-9 text-gold p-1.5">${icon(g.icon)}</span>
+      <span>
+        <span class="block font-display text-[17px] text-burgundy">${g.title}</span>
+        <span class="block text-[13px] text-burgundy/60 mt-0.5">${g.desc}</span>
+      </span>
+    </div>`).join("");
+
+  // RSVP + төгсгөл
+  $("#rsvp-deadline").textContent = C.rsvp.deadline;
+  $("#close-line").textContent    = C.closing.line;
+  $("#close-names").textContent   = C.closing.names;
+  $("#close-date").textContent    = C.event.dateText;
+}
+
+
+/* ───────── 2. ДУГТУЙ НЭЭХ АНИМЕЙШН ───────── */
+let opened = false;
+function openEnvelope() {
+  if (opened) return;
+  opened = true;
+
+  const tl = gsap.timeline({
+    defaults: { ease: "power3.inOut" },
+    onComplete: () => {
+      $("#envelope-screen").style.display = "none";
+      document.body.classList.remove("locked");
+      initScrollReveals();     // Урилга нээгдсэний дараа scroll анимейшн асна
+    }
+  });
+
+  if (reduceMotion) { tl.to("#envelope-screen", { opacity:0, duration:.4 }); return; }
+
+  tl.to("#env-hint",  { opacity:0, duration:.3 })
+    // ① Лац хагарч, дээш хөөрөх
+    .to("#seal",      { scale:1.35, opacity:0, rotate:12, duration:.55, ease:"back.in(1.6)" }, "<")
+    // ② Таг нээгдэх (3D эргэлт)
+    .to("#env-flap",  { rotateX:-172, duration:1.15, ease:"power2.inOut" }, "-=0.15")
+    .set("#env-flap", { zIndex:5 }, "-=0.55")
+    // ③ Карт дугтуйнаас дээш гарах
+    .to("#env-card",  { y:-150, scale:1.04, duration:1.1 }, "-=0.35")
+    // ④ Дугтуй ар руугаа бүдгэрч, карт дэлгэц дүүрэн болох
+    .to("#env-front, #env-flap, #envelope > div:nth-child(2)", { opacity:0, duration:.5 }, "-=0.3")
+    .to("#env-card",  { scale:12, opacity:0, duration:1.0, ease:"power2.in" }, "-=0.15")
+    .to("#env-to",    { opacity:0, duration:.4 }, "<")
+    .to("#envelope-screen", { opacity:0, duration:.6 }, "-=0.5")
+    // ⑤ Эхний дэлгэцийн агуулга зөөлөн гарч ирэх
+    .fromTo("#invite section:first-child .reveal",
+            { opacity:0, y:34 },
+            { opacity:1, y:0, duration:1.1, stagger:.16, ease:"power2.out" }, "-=0.35");
+}
+$("#seal").addEventListener("click", openEnvelope);
+$("#envelope").addEventListener("click", openEnvelope);
+// Дугтуй дээр scroll хийхэд бас нээгдэнэ
+$("#envelope-screen").addEventListener("wheel",      openEnvelope, { passive:true });
+$("#envelope-screen").addEventListener("touchmove",  openEnvelope, { passive:true });
+
+/* Лацны амьсгаа — анхаарал татах зөөлөн хөдөлгөөн */
+if (!reduceMotion) {
+  gsap.to("#seal",     { scale:1.06, duration:1.6, yoyo:true, repeat:-1, ease:"sine.inOut" });
+  gsap.to("#env-hint", { opacity:.35, duration:1.8, yoyo:true, repeat:-1, ease:"sine.inOut" });
+}
+
+
+/* ───────── 3. SCROLL REVEAL (fade-in-up) ───────── */
+function initScrollReveals() {
+  if (reduceMotion) return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Эхний дэлгэцийг аль хэдийн анимэйтлэсэн тул алгасна
+  const first = $("#invite section:first-child");
+  $$(".reveal").forEach((el) => {
+    if (first.contains(el)) return;
+    gsap.to(el, {
+      opacity: 1, y: 0, duration: 1.1, ease: "power2.out",
+      scrollTrigger: { trigger: el, start: "top 88%", once: true }
+    });
+  });
+}
+
+
+/* ───────── 4. COUNTDOWN ───────── */
+const CD_UNITS = [["days","Хоног"],["hours","Цаг"],["mins","Мин"],["secs","Сек"]];
+$("#countdown").innerHTML = CD_UNITS.map(([k,label])=>`
+  <div class="border border-burgundy/12 rounded-xl py-4 bg-white/50">
+    <span id="cd-${k}" class="block font-display text-[30px] text-burgundy tabular-nums">00</span>
+    <span class="block text-[9px] tracking-[.2em] uppercase text-burgundy/45 mt-1">${label}</span>
+  </div>`).join("");
+
+function tickCountdown() {
+  const diff = new Date(CONFIG.event.dateISO).getTime() - Date.now();
+  if (diff <= 0) {                       // Огноо өнгөрсөн эсвэл болж байгаа
+    CD_UNITS.forEach(([k])=> $("#cd-"+k).textContent = "00");
+    const note = $("#countdown-note");
+    note.textContent = "Тэр өдөр ирлээ. Уулзацгаая!";
+    note.classList.remove("hidden");
+    clearInterval(cdTimer);
+    return;
+  }
+  const s = Math.floor(diff/1000);
+  const pad = (n)=> String(n).padStart(2,"0");
+  $("#cd-days").textContent  = pad(Math.floor(s/86400));
+  $("#cd-hours").textContent = pad(Math.floor(s%86400/3600));
+  $("#cd-mins").textContent  = pad(Math.floor(s%3600/60));
+  $("#cd-secs").textContent  = pad(s%60);
+}
+const cdTimer = setInterval(tickCountdown, 1000);
+
+
+/* ───────── 5. ЦОМГИЙН ЗААГЧ ЦЭГ ───────── */
+const track = $("#gallery");
+track.addEventListener("scroll", () => {
+  const items = track.children;
+  if (!items.length) return;
+  const center = track.scrollLeft + track.clientWidth/2;
+  let active = 0, best = Infinity;
+  [...items].forEach((el,i)=>{
+    const d = Math.abs(el.offsetLeft + el.offsetWidth/2 - center);
+    if (d < best) { best = d; active = i; }
+  });
+  $$("#gallery-dots .dot").forEach((d,i)=>{
+    d.className = `dot h-1.5 rounded-full transition-all ${i===active?'bg-gold2 w-5':'bg-cream/30 w-1.5'}`;
+  });
+}, { passive:true });
+
+
+/* ───────── 6. RSVP ФОРМ ───────── */
+let attending = "yes";
+let guestCount = 1;
+
+$$(".attend-opt").forEach(btn => {
+  btn.addEventListener("click", () => {
+    attending = btn.dataset.attend;
+    $$(".attend-opt").forEach(b => {
+      const on = b.dataset.attend === attending;
+      b.setAttribute("aria-checked", on);
+      b.className = `attend-opt rounded-full py-3 text-[14px] transition-all border ${
+        on ? "border-gold2 bg-gold2 text-burgundy" : "border-cream/25 text-cream/70"}`;
+    });
+    // "Ирж чадахгүй" сонговол хүний тоог зөөлөн нуух
+    gsap.to("#count-wrap", {
+      height: attending === "yes" ? "auto" : 0,
+      opacity: attending === "yes" ? 1 : 0,
+      duration:.45, ease:"power2.inOut", overwrite:true
+    });
+  });
+});
+
+$("#cnt-minus").addEventListener("click", () => setCount(guestCount - 1));
+$("#cnt-plus").addEventListener("click",  () => setCount(guestCount + 1));
+function setCount(v) {
+  guestCount = Math.min(20, Math.max(1, v));
+  $("#cnt-val").textContent = guestCount;
+  gsap.fromTo("#cnt-val", { scale:.75 }, { scale:1, duration:.35, ease:"back.out(2.5)" });
+}
+
+$("#rsvp-send").addEventListener("click", async () => {
+  const name = $("#g-name").value.trim();
+  const err  = $("#rsvp-error");
+
+  // Хамгийн бага шалгалт — нэр заавал
+  if (!name) {
+    err.textContent = "Нэрээ бичнэ үү";
+    err.classList.remove("hidden");
+    gsap.fromTo("#g-name", { x:-8 }, { x:0, duration:.5, ease:"elastic.out(1,.35)" });
+    return;
+  }
+  err.classList.add("hidden");
+
+  const payload = {
+    name,
+    attending,
+    guests: attending === "yes" ? guestCount : 0,
+    wish:   $("#g-wish").value.trim(),
+    sentAt: new Date().toISOString()
+  };
+
+  // CONFIG.rsvp.endpoint тавьсан бол тийш илгээнэ. Алдаа гарвал ч зочинд амжилттай гэж харуулна.
+  if (CONFIG.rsvp.endpoint) {
+    try {
+      await fetch(CONFIG.rsvp.endpoint, {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) { console.warn("RSVP илгээхэд алдаа:", e); }
+  }
+  console.log("RSVP:", payload);
+  showSuccess(name);
+});
+
+/* Амжилттай илгээсэн анимейшн — зурсан мэт гарч ирэх тэмдэг */
+function showSuccess(name) {
+  const form = $("#rsvp-form"), ok = $("#rsvp-success");
+  $("#success-text").textContent = attending === "yes"
+    ? `${name}, таныг тэсэн ядан хүлээж байна.`
+    : `${name}, ойлголоо. Таны ерөөл бидэнд хүрлээ.`;
+
+  gsap.to(form, { opacity:0, y:-16, duration:.45, ease:"power2.in", onComplete: () => {
+    form.classList.add("hidden");
+    ok.classList.remove("hidden");
+
+    const c = $("#tick-c"), p = $("#tick-p");
+    const cl = c.getTotalLength(), pl = p.getTotalLength();
+    gsap.set(c, { strokeDasharray: cl, strokeDashoffset: cl });
+    gsap.set(p, { strokeDasharray: pl, strokeDashoffset: pl });
+
+    gsap.timeline()
+      .to(c, { strokeDashoffset:0, duration:.9, ease:"power2.inOut" })
+      .to(p, { strokeDashoffset:0, duration:.5, ease:"power2.out" }, "-=0.25")
+      .fromTo(ok.querySelectorAll("h3,p"),
+              { opacity:0, y:16 },
+              { opacity:1, y:0, duration:.8, stagger:.12, ease:"power2.out" }, "-=0.2");
+  }});
+}
+
+
+/* ───────── 7. АРЫН ХӨГЖИМ ───────── */
+const audio = $("#bg-audio"), mBtn = $("#music-btn");
+if (CONFIG.music.src) {
+  audio.src = CONFIG.music.src;
+  audio.volume = 0.45;
+  mBtn.classList.replace("hidden","flex");
+
+  mBtn.addEventListener("click", () => {
+    if (audio.paused) { audio.play().catch(()=>{}); }
+    else { audio.pause(); }
+    $("#ic-play").classList.toggle("hidden",  !audio.paused);
+    $("#ic-pause").classList.toggle("hidden",  audio.paused);
+    mBtn.setAttribute("aria-label", audio.paused ? "Хөгжим тоглуулах" : "Хөгжим зогсоох");
+  });
+
+  // Дугтуй нээгдэхэд хөгжим эхлүүлэх оролдлого (хэрэглэгчийн даралт → зөвшөөрөгддөг)
+  if (CONFIG.music.autoplay) {
+    $("#seal").addEventListener("click", () => {
+      audio.play().then(()=>{
+        $("#ic-play").classList.add("hidden");
+        $("#ic-pause").classList.remove("hidden");
+      }).catch(()=>{});
+    }, { once:true });
+  }
+}
+
+
+/* ───────── ЭХЛҮҮЛЭХ ───────── */
+fillContent();
+tickCountdown();
+setCount(1);
+if (reduceMotion) {                  // Хөдөлгөөн багасгасан бол шууд нээх
+  $("#envelope-screen").style.display = "none";
+  document.body.classList.remove("locked");
+}
+</script>
+</body>
+</html>
