@@ -96,8 +96,52 @@ const CONFIG = {
   closing: {
     line:  "Таныг хүлээн авахдаа таатай байх болно",
     names: "Батбаяр & Алтанцэцэг"
-  }
+  },
+
+  /* ── 10. Жишээ горим ───────────────────────────────────────────────
+     on:true → огноо өнөөдрөөс daysAhead хоногийн дараа болж, дээд талд
+     «ЖИШЭЭ» тэмдэг гарна (portfolio-гийн жишээ хэзээ ч «өнгөрөхгүй»).
+     ЖИНХЭНЭ урилгад on:false — дээрх event-ийн огноо хэвээр ажиллана. */
+  demo: { on: true, daysAhead: 30, rsvpDaysBefore: 9, label: "ЖИШЭЭ" }
 };
+
+/* ── Жишээ огноо ба «Өөрийн нэрээр үзэх» (BACKLOG #101, #102 — 2026-10-10) ──
+   URL: ?n1=Бат&n2=Сараа&d=2026-12-20 — үйлчлүүлэгч өөрийн нэр, огноогоор шууд үзнэ.
+   Утгаас < > " ' ` & тэмдэгтийг хасаж, 24 тэмдэгтээр хязгаарлана. */
+(function applyDemo(C) {
+  const q = new URLSearchParams(location.search);
+  const clean = (v) => (v || "").replace(/[<>"'`&]/g, "").trim().slice(0, 24);
+  const n1 = clean(q.get("n1")), n2 = clean(q.get("n2"));
+  const dq = /^\d{4}-\d{2}-\d{2}$/.test(q.get("d") || "") ? q.get("d") : "";
+  let day = null;
+  if (dq) day = new Date(dq + "T00:00:00");
+  else if (C.demo.on) { day = new Date(); day.setDate(day.getDate() + C.demo.daysAhead); }
+  if (day && !isNaN(day)) {
+    const p2 = (n) => String(n).padStart(2, "0");
+    const ymd = (t) => `${t.getFullYear()}.${p2(t.getMonth() + 1)}.${p2(t.getDate())}`;
+    const WD = ["Ням", "Даваа", "Мягмар", "Лхагва", "Пүрэв", "Баасан", "Бямба"];
+    const time = C.event.dateISO.slice(11, 16);                 /* цаг хэвээр */
+    C.event.dateISO  = `${day.getFullYear()}-${p2(day.getMonth() + 1)}-${p2(day.getDate())}T${time}:00+08:00`;
+    C.event.dateText = ymd(day);
+    C.event.dayText  = `${WD[day.getDay()]} гараг · ${time}`;
+    const dl = new Date(day); dl.setDate(dl.getDate() - C.demo.rsvpDaysBefore);
+    C.rsvp.deadline  = `${ymd(dl)} хүртэл хариугаа өгнө үү`;
+  }
+  if (n1) {
+    C.event.hosts = n2 ? [n1, n2] : [n1];
+    C.envelope.monogram = n2 ? `${n1[0]}&${n2[0]}` : n1[0];
+    C.closing.names = C.event.hosts.join(` ${C.event.joiner} `);
+  }
+  if (C.demo.on) document.addEventListener("DOMContentLoaded", () => {
+    const b = document.createElement("div");
+    b.textContent = C.demo.label;
+    b.setAttribute("aria-label", "Жишээ урилга");
+    b.style.cssText = "position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none;" +
+      "font:600 11px/1 system-ui,sans-serif;letter-spacing:.22em;padding:6px 12px;border-radius:999px;" +
+      "background:rgba(43,10,16,.72);color:#E4CE95;backdrop-filter:blur(6px)";
+    document.body.appendChild(b);
+  });
+})(CONFIG);
 </script>
 
 <script>
