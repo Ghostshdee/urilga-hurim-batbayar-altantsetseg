@@ -109,6 +109,7 @@ const CONFIG = {
    URL: ?n1=Бат&n2=Сараа&d=2026-12-20 — үйлчлүүлэгч өөрийн нэр, огноогоор шууд үзнэ.
    Утгаас < > " ' ` & тэмдэгтийг хасаж, 24 тэмдэгтээр хязгаарлана. */
 (function applyDemo(C) {
+  if (!C.demo.on) return;                                     /* жинхэнэ урилгад URL огноо, нэрийг солихгүй */
   const q = new URLSearchParams(location.search);
   const clean = (v) => (v || "").replace(/[<>"'`&]/g, "").trim().slice(0, 24);
   const n1 = clean(q.get("n1")), n2 = clean(q.get("n2"));
@@ -129,7 +130,8 @@ const CONFIG = {
   }
   if (n1) {
     C.event.hosts = n2 ? [n1, n2] : [n1];
-    C.envelope.monogram = n2 ? `${n1[0]}&${n2[0]}` : n1[0];
+    const first = (s) => Array.from(s)[0].toLocaleUpperCase("mn");
+    C.envelope.monogram = n2 ? `${first(n1)}&${first(n2)}` : first(n1);
     C.closing.names = C.event.hosts.join(` ${C.event.joiner} `);
   }
   if (C.demo.on) document.addEventListener("DOMContentLoaded", () => {
